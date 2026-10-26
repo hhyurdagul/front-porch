@@ -1,0 +1,2176 @@
+[
+  {
+    "name": "qloo_capabilities",
+    "title": "Inspect Qloo MCP capabilities",
+    "description": "Inspect the canonical Qloo workflow contract, checksum, and this server's exact execution readiness without contacting Qloo.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "recommend",
+              "rank",
+              "describe",
+              "where_popular",
+              "compare_audiences",
+              "entity_tags",
+              "audience_demographics",
+              "trends",
+              "find_tags"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 9
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "manifest_schema_version",
+        "contract_version",
+        "contract_checksum",
+        "result_schema_version",
+        "adapter",
+        "operations"
+      ],
+      "properties": {
+        "manifest_schema_version": {
+          "type": "string"
+        },
+        "contract_version": {
+          "type": "string"
+        },
+        "contract_checksum": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "result_schema_version": {
+          "type": "string"
+        },
+        "adapter": {
+          "type": "object"
+        },
+        "operations": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_recommend",
+    "title": "Find entities for a taste profile, audience, or collection of signals.",
+    "description": "Find Qloo entities related to one combined entity, tag, location, and demographic taste profile. Signals influence affinity; filters constrain output.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "target_type"
+      ],
+      "properties": {
+        "target_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame"
+          ],
+          "description": "Qloo Insights entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame."
+        },
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Named entities or Qloo entity UUIDs; use tag fields for abstract concepts."
+        },
+        "signal_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Genres, moods, styles, traits, or other concepts, or Qloo tag URNs; not named entities."
+        },
+        "signal_tags_operator": {
+          "type": "string",
+          "enum": [
+            "union",
+            "intersection"
+          ],
+          "description": "Combine tag values with union (any) or intersection (all)."
+        },
+        "signal_location": {
+          "type": "string",
+          "minLength": 1
+        },
+        "demographic": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Audience demographic in natural language, such as 'young women', 'men 25-34', or 'millennials'. It is converted to documented Qloo demographic signals.",
+          "examples": [
+            "young women",
+            "men 25-34",
+            "millennials"
+          ]
+        },
+        "filter_location": {
+          "type": "string",
+          "minLength": 1
+        },
+        "include_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Genres, moods, styles, traits, or other concepts, or Qloo tag URNs; not named entities."
+        },
+        "include_tags_operator": {
+          "type": "string",
+          "enum": [
+            "union",
+            "intersection"
+          ],
+          "description": "Combine tag values with union (any) or intersection (all)."
+        },
+        "exclude_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Genres, moods, styles, traits, or other concepts, or Qloo tag URNs; not named entities."
+        },
+        "exclude_tags_operator": {
+          "type": "string",
+          "enum": [
+            "union",
+            "intersection"
+          ],
+          "description": "Combine tag values with union (any) or intersection (all)."
+        },
+        "explain": {
+          "type": "boolean",
+          "default": true
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_rank",
+    "title": "Rank a supplied set of options for signals, location, or audience.",
+    "description": "Rank one supplied option set against one shared entity, location, demographic, and tag profile. Scores from separate calls are not comparable.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "options",
+        "option_type"
+      ],
+      "properties": {
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Named entities or Qloo entity UUIDs; use tag fields for abstract concepts."
+        },
+        "option_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame"
+          ],
+          "description": "Qloo Insights entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame."
+        },
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Named entities or Qloo entity UUIDs; use tag fields for abstract concepts."
+        },
+        "signal_location": {
+          "type": "string",
+          "minLength": 1
+        },
+        "demographic": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Audience demographic in natural language, such as 'young women', 'men 25-34', or 'millennials'. It is converted to documented Qloo demographic signals.",
+          "examples": [
+            "young women",
+            "men 25-34",
+            "millennials"
+          ]
+        },
+        "include_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Genres, moods, styles, traits, or other concepts, or Qloo tag URNs; not named entities."
+        },
+        "exclude_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Genres, moods, styles, traits, or other concepts, or Qloo tag URNs; not named entities."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_describe",
+    "title": "Resolve and describe one Qloo entity.",
+    "description": "Resolve one named entity or Qloo UUID and return only metadata present in Qloo.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "entity"
+      ],
+      "properties": {
+        "entity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame",
+            "locality",
+            "actor",
+            "album",
+            "author",
+            "director"
+          ],
+          "description": "Qloo search entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame, locality, actor, album, author, director."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_where_popular",
+    "title": "Find geographic areas where an entity has comparatively strong affinity.",
+    "description": "Find geographic areas where one entity has strong query-relative affinity. This is distinct from filtering recommendations to a place.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "entity",
+        "within"
+      ],
+      "properties": {
+        "entity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame",
+            "locality",
+            "actor",
+            "album",
+            "author",
+            "director"
+          ],
+          "description": "Qloo search entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame, locality, actor, album, author, director."
+        },
+        "within": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Required geographic area that constrains the heatmap."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_compare_audiences",
+    "title": "Contrast two signal groups and identify shared or differentiating affinities.",
+    "description": "Compare two complete groups of entity signals in one Qloo analysis request.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "group_a",
+        "group_b"
+      ],
+      "properties": {
+        "group_a": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Named entities or Qloo entity UUIDs; use tag fields for abstract concepts."
+        },
+        "group_b": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Named entities or Qloo entity UUIDs; use tag fields for abstract concepts."
+        },
+        "target_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame"
+          ],
+          "description": "Qloo Insights entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_entity_tags",
+    "title": "Retrieve concepts and tags that characterize entities.",
+    "description": "Retrieve Qloo concepts that jointly characterize one or more entities using the documented urn:tag Insights workflow.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "entities"
+      ],
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Named entities or Qloo entity UUIDs; use tag fields for abstract concepts."
+        },
+        "entity_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame",
+            "locality",
+            "actor",
+            "album",
+            "author",
+            "director"
+          ],
+          "description": "Qloo search entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame, locality, actor, album, author, director."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_audience_demographics",
+    "title": "Retrieve aggregate audience segments associated with an entity.",
+    "description": "Retrieve aggregate demographic distributions associated with one entity through the documented urn:demographics Insights workflow.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "entity"
+      ],
+      "properties": {
+        "entity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame",
+            "locality",
+            "actor",
+            "album",
+            "author",
+            "director"
+          ],
+          "description": "Qloo search entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame, locality, actor, album, author, director."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_trends",
+    "title": "Retrieve interest or trend information over a time range.",
+    "description": "Retrieve Qloo time-series popularity metrics for one to five resolved entities over an ISO date range.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "entities",
+        "entity_type",
+        "start_date",
+        "end_date"
+      ],
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "maxItems": 5
+        },
+        "entity_type": {
+          "type": "string",
+          "enum": [
+            "artist",
+            "book",
+            "brand",
+            "movie",
+            "person",
+            "place",
+            "podcast",
+            "tv_show",
+            "videogame"
+          ],
+          "description": "Qloo Insights entity type: artist, book, brand, movie, person, place, podcast, tv_show, videogame."
+        },
+        "start_date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Inclusive start date in YYYY-MM-DD format."
+        },
+        "end_date": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Inclusive end date in YYYY-MM-DD format."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  },
+  {
+    "name": "qloo_find_tags",
+    "title": "Search the Qloo tag ontology by natural-language concept.",
+    "description": "Search Qloo's tag ontology by natural-language concept and return stable tag URNs.",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantic": {
+          "type": "boolean",
+          "default": true
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 10,
+          "description": "Maximum results to return (1-20)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "operation",
+        "status",
+        "execution"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0-preview.1"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "type": "string",
+              "const": "needs_input"
+            },
+            {
+              "type": "string",
+              "const": "partial"
+            },
+            {
+              "type": "string",
+              "const": "degraded"
+            },
+            {
+              "type": "string",
+              "const": "error"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "interpretation": {},
+        "results": {},
+        "result_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "query_intent": {},
+        "error": {
+          "type": "object",
+          "required": [
+            "code",
+            "layer",
+            "retryable",
+            "recovery"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            },
+            "recovery": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "transport",
+            "transport_name",
+            "correlation_id",
+            "duration_ms"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "cli",
+                "mcp"
+              ]
+            },
+            "transport_name": {
+              "type": "string"
+            },
+            "correlation_id": {
+              "type": "string"
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "source",
+            "endpoint",
+            "documentation"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "endpoint": {
+              "type": "string"
+            },
+            "documentation": {
+              "type": "string"
+            },
+            "transport": {
+              "type": "string"
+            },
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "method",
+                  "path",
+                  "query"
+                ],
+                "properties": {
+                  "method": {
+                    "type": "string",
+                    "const": "GET"
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "query": {}
+                },
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "qloo/contractVersion": "1.0.0",
+      "qloo/contractChecksum": "sha256:762bdcc5e14ff797b6de739d2658a83f78af35e68d7a5a3449455be6046924f5"
+    }
+  }
+]

@@ -1,0 +1,97 @@
+{
+ "note": "Gemini-alone answers recorded live on 2026-10-20 (the run deployed when the UI was finalised, not a selected run). Pinned so the demo and README show the same baseline across redeploys; 'Rebuild live' reuses them. Delete an entry to ask the model again.",
+ "entries": [
+  {
+   "key": "gemini:baseline:gemini-3.5-flash-lite:AL:hurricane:Mobile|Baldwin|Escambia|Covington",
+   "at": "2026-10-20T18:30:23.265Z",
+   "value": [
+    {
+     "name": "WKRG-TV News 5",
+     "kind": "local media"
+    },
+    {
+     "name": "WALA-TV FOX10 News",
+     "kind": "local media"
+    },
+    {
+     "name": "University of South Alabama",
+     "kind": "university"
+    },
+    {
+     "name": "Coastal Alabama Community College",
+     "kind": "university"
+    },
+    {
+     "name": "Mobile BayBears (historic/local sports community)",
+     "kind": "sports team"
+    },
+    {
+     "name": "Flora-Bama Lounge and Package",
+     "kind": "local business"
+    },
+    {
+     "name": "Wind Creek Hospitality",
+     "kind": "local business"
+    },
+    {
+     "name": "Bubba Sparxxx",
+     "kind": "musician"
+    },
+    {
+     "name": "Mayor Sandy Stimpson",
+     "kind": "public figure"
+    },
+    {
+     "name": "The Wharf at Orange Beach",
+     "kind": "local business"
+    }
+   ]
+  },
+  {
+   "key": "gemini:baseline:gemini-3.5-flash-lite:OK:tornado:Oklahoma|Tulsa|Pottawatomie|Cleveland",
+   "at": "2026-10-20T18:30:31.227Z",
+   "value": [
+    {
+     "name": "Oklahoma City Thunder",
+     "kind": "sports team"
+    },
+    {
+     "name": "University of Oklahoma",
+     "kind": "university"
+    },
+    {
+     "name": "University of Tulsa",
+     "kind": "university"
+    },
+    {
+     "name": "KWTV News 9",
+     "kind": "local media"
+    },
+    {
+     "name": "KOTV News On 6",
+     "kind": "local media"
+    },
+    {
+     "name": "Braum's Ice Cream and Dairy Stores",
+     "kind": "local business"
+    },
+    {
+     "name": "Love's Travel Stops",
+     "kind": "local business"
+    },
+    {
+     "name": "Oklahoma State Fair",
+     "kind": "local organization"
+    },
+    {
+     "name": "Tulsa State Fair",
+     "kind": "local organization"
+    },
+    {
+     "name": "Garth Brooks",
+     "kind": "musician"
+    }
+   ]
+  }
+ ]
+}

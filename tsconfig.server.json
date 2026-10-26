@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["server", "shared"],
+  "exclude": ["ui", "tests", "scripts"],
+  "compilerOptions": { "rootDir": ".", "outDir": "dist" }
+}

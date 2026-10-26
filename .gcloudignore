@@ -1,0 +1,21 @@
+# Cloud Build upload exclusions; Docker has its own matching exclusions.
+.gcloudignore
+.git
+.git/**
+node_modules
+node_modules/**
+tooling/node_modules
+tooling/node_modules/**
+dist
+dist/**
+.env
+.env.*
+.qloo
+.qloo/**
+evaluation
+evaluation/**
+docs/qloo-bindings.local.json
+docs/evaluation-choices.json
+.cache
+docs/screenshots
+docs/screenshots/**

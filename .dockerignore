@@ -1,0 +1,12 @@
+node_modules
+tooling/node_modules
+dist
+.env
+.env.*
+.git
+.qloo
+evaluation
+docs/qloo-bindings.local.json
+docs/evaluation-choices.json
+.cache
+docs/screenshots

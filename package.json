@@ -1,0 +1,42 @@
+{
+  "name": "frontporch",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0 <23"
+  },
+  "scripts": {
+    "dev": "node --import tsx server/index.ts",
+    "ui": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build && tsc -p tsconfig.server.json",
+    "start": "node dist/server/index.js",
+    "test": "node --import tsx --test --experimental-test-isolation=none tests/*.test.ts",
+    "eval:fixture": "node --import tsx scripts/evaluate.ts --fixture",
+    "eval:live": "node --import tsx scripts/evaluate.ts --live",
+    "qloo:schemas": "node --import tsx scripts/discover.ts",
+    "harness:install": "npm install --prefix tooling --ignore-scripts --save-exact @qloo/qloo-harness@0.1.26"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "ajv": "8.20.0",
+    "express": "5.2.1",
+    "leaflet": "1.9.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/leaflet": "1.9.20",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3",
+    "vite": "8.3.1"
+  },
+  "overrides": {
+    "qs": "6.16.0"
+  }
+}
