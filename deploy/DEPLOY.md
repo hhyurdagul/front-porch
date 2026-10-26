@@ -45,4 +45,4 @@ Cost note: one always-on instance is billed while idle. Delete the service when 
 
 ## After a deploy
 
-A new revision starts with an empty cache. Open the two demo presets once (Alabama · hurricane, Oklahoma · tornado) so judges see them instantly. The Gemini-alone answers for these presets are pinned in `docs/baseline-seed.json`, so they are the same after every deploy; everything else is fetched live.
+A new revision starts with an empty evidence cache. The two judged presets (Alabama · hurricane, Oklahoma · tornado) still load instantly: their plans, built live on the production service on 2026-10-26, are recorded in `docs/demo-plans.json` and never expire, and the Gemini-alone answers inside them are pinned in `docs/baseline-seed.json`. "Rebuild live" and every other state and hazard are fetched live.

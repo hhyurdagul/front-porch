@@ -36,6 +36,7 @@ export function createApp(
     planTtlMs: 6 * 3600 * 1000,
     timeoutMs: 240000,
   },
+  demoPlans: Plan[] = [],
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -46,6 +47,12 @@ export function createApp(
     { listeners: Set<(e: ProgressEvent) => void>; log: ProgressEvent[] }
   >();
   const perIp = new Map<string, number[]>();
+  // Recorded demo plans (docs/demo-plans.json) never expire, so the presets load instantly after any restart.
+  const pinned = new Map<string, Plan>();
+  for (const p of demoPlans) {
+    plans.set(p.id, p);
+    pinned.set(`${p.state}:${p.hazard}`, p);
+  }
 
   /** Build a plan outside a request (startup warm-up) and store it like a requested one. */
   async function warm(state: string, hazard: HazardId) {
@@ -86,7 +93,9 @@ export function createApp(
       })),
       presets: PRESETS.map((p) => ({
         ...p,
-        ready: latest.has(`${p.state}:${p.hazard}`),
+        ready:
+          latest.has(`${p.state}:${p.hazard}`) ||
+          pinned.has(`${p.state}:${p.hazard}`),
       })),
     }),
   );
@@ -101,18 +110,19 @@ export function createApp(
         if (!res.destroyed) res.write(JSON.stringify(redact(e)) + "\n");
       };
       const cached = latest.get(key);
-      if (
+      const ready =
         cached &&
-        !refresh &&
         Date.now() - cached.at < limits.planTtlMs &&
         plans.has(cached.id)
-      ) {
+          ? plans.get(cached.id)!
+          : pinned.get(key);
+      if (ready && !refresh) {
         send({
           type: "progress",
           step: "cache",
-          detail: `Showing the plan built at ${new Date(cached.at).toISOString().slice(0, 16)}Z (refresh to rebuild live)`,
+          detail: `Showing the plan built at ${ready.createdAt.slice(0, 16)}Z (refresh to rebuild live)`,
         });
-        send({ type: "result", plan: plans.get(cached.id)! });
+        send({ type: "result", plan: ready });
         return res.end();
       }
       const run = inflight.get(key);

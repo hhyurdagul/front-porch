@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import type { Plan } from "../shared/types.js";
 import { createApp, PRESETS } from "./app.js";
 import { EvidenceCache } from "./cache.js";
 import { Gemini } from "./gemini.js";
@@ -12,7 +14,14 @@ const cache = new EvidenceCache(
   "docs/baseline-seed.json",
 );
 const deps = { qloo, llm, cache };
-const { app, warm } = createApp(deps);
+// The recorded plans for the two judged presets (see docs/demo-plans.json).
+let demoPlans: Plan[] = [];
+try {
+  demoPlans = JSON.parse(readFileSync("docs/demo-plans.json", "utf8")).plans;
+} catch {
+  /* no recorded plans: every preset is built live */
+}
+const { app, warm } = createApp(deps, undefined, demoPlans);
 const port = Number(process.env.PORT ?? 8080);
 if (!Number.isInteger(port) || port < 1 || port > 65535)
   throw new Error("Invalid PORT");

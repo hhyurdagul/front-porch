@@ -301,3 +301,44 @@ test("API streams progress then a plan, serves exports, and rejects bad input", 
     server.close();
   }
 });
+
+test("API: recorded demo plans load instantly, past the TTL and with no Qloo calls", async () => {
+  const { t, deps: d } = deps();
+  const demo = await buildPlan(d, "OK", "tornado");
+  const n = t.calls.length;
+  const { app } = createApp(
+    d,
+    {
+      plansPerHourPerIp: 12,
+      concurrentPlans: 2,
+      planTtlMs: 1,
+      timeoutMs: 240000,
+    },
+    [demo],
+  );
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((r) => server.once("listening", r));
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  try {
+    const res = await fetch(`${base}/api/plans`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ state: "OK", hazard: "tornado" }),
+    });
+    const events = (await res.text())
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l) as ProgressEvent);
+    assert.equal(events[0].type === "progress" && events[0].step, "cache");
+    assert.equal((events.at(-1) as { plan: Plan }).plan.id, demo.id);
+    assert.equal(t.calls.length, n);
+    const options = await (await fetch(`${base}/api/options`)).json();
+    assert.ok(
+      options.presets.some(
+        (p: { state: string; ready: boolean }) => p.state === "OK" && p.ready,
+      ),
+    );
+  } finally {
+    server.close();
+  }
+});
